@@ -34,13 +34,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
     5. Returns 403 for missing tokens on protected routes
 
     Public routes (no auth required):
+    - / (root - for health checks)
     - /health
+    - /api/health
     - /docs
     - /redoc
     - /openapi.json
     """
 
-    PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+    PUBLIC_PATHS = {"/", "/health", "/api/health", "/docs", "/redoc", "/openapi.json"}
 
     async def dispatch(self, request: Request, call_next):
         """Process request and validate authentication."""

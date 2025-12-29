@@ -36,7 +36,6 @@ def validate_environment():
     required_vars = {
         "DATABASE_URL": "PostgreSQL database connection string",
         "OPENAI_API_KEY": "OpenAI API key for agent functionality",
-        "BETTER_AUTH_SECRET": "Secret key for JWT token signing (min 32 chars)",
     }
 
     missing = []
@@ -44,17 +43,22 @@ def validate_environment():
         if not os.getenv(var):
             missing.append(f"  - {var}: {description}")
 
+    # Check for JWT_SECRET_KEY (with BETTER_AUTH_SECRET as fallback for backwards compatibility)
+    auth_secret = os.getenv("JWT_SECRET_KEY") or os.getenv("BETTER_AUTH_SECRET", "")
+    if not auth_secret:
+        missing.append("  - JWT_SECRET_KEY or BETTER_AUTH_SECRET: Secret key for JWT token signing (min 32 chars)")
+
     if missing:
         error_msg = "Missing required environment variables:\n" + "\n".join(missing)
         error_msg += "\n\nPlease set these in your .env file or environment."
         logger.error(error_msg)
         sys.exit(1)
 
-    # Validate BETTER_AUTH_SECRET length
-    auth_secret = os.getenv("BETTER_AUTH_SECRET", "")
+    # Validate JWT_SECRET_KEY length
+    auth_secret = os.getenv("JWT_SECRET_KEY") or os.getenv("BETTER_AUTH_SECRET", "")
     if len(auth_secret) < 32:
         logger.error(
-            "BETTER_AUTH_SECRET must be at least 32 characters long for security. "
+            "JWT_SECRET_KEY must be at least 32 characters long for security. "
             f"Current length: {len(auth_secret)}"
         )
         sys.exit(1)

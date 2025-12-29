@@ -8,10 +8,10 @@ from uuid import UUID
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
 
-# Better Auth configuration
-BETTER_AUTH_SECRET = os.getenv("BETTER_AUTH_SECRET", "")
-ALGORITHM = "HS256"
-TOKEN_EXPIRE_MINUTES = 30
+# JWT configuration (supports both JWT_SECRET_KEY and BETTER_AUTH_SECRET)
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or os.getenv("BETTER_AUTH_SECRET", "")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "43200")) // 60
 
 
 class AuthError(Exception):
@@ -50,11 +50,11 @@ def verify_token(token: str) -> dict:
         >>> payload = verify_token("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
         >>> user_id = payload.get("sub")
     """
-    if not BETTER_AUTH_SECRET:
-        raise AuthError("BETTER_AUTH_SECRET environment variable not configured")
+    if not JWT_SECRET_KEY:
+        raise AuthError("JWT_SECRET_KEY environment variable not configured")
 
     try:
-        payload = jwt.decode(token, BETTER_AUTH_SECRET, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except ExpiredSignatureError:
         raise TokenExpiredError("Token has expired")
@@ -114,8 +114,8 @@ def create_access_token(user_id: UUID, expires_delta: Optional[timedelta] = None
         >>> user_id = uuid4()
         >>> token = create_access_token(user_id)
     """
-    if not BETTER_AUTH_SECRET:
-        raise AuthError("BETTER_AUTH_SECRET environment variable not configured")
+    if not JWT_SECRET_KEY:
+        raise AuthError("JWT_SECRET_KEY environment variable not configured")
 
     to_encode = {"sub": str(user_id)}
 
@@ -126,7 +126,7 @@ def create_access_token(user_id: UUID, expires_delta: Optional[timedelta] = None
 
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(to_encode, BETTER_AUTH_SECRET, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
