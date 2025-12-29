@@ -12,8 +12,8 @@ import React, { useEffect, useRef } from 'react';
 import {
   MessageList as ChatKitMessageList,
   Message as ChatKitMessage,
+  TypingIndicator,
 } from '@chatscope/chat-ui-kit-react';
-import { ChatResponse } from '../services/api';
 
 interface Message {
   id: string;
@@ -65,7 +65,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     <div ref={messageListRef} className="message-list-container">
       <ChatKitMessageList
         typingIndicator={
-          isTyping ? <ChatKitMessage.TypingIndicator content="Assistant is thinking..." /> : undefined
+          isTyping ? <TypingIndicator content="Assistant is thinking..." /> : undefined
         }
       >
         {messages.map((msg) => (
