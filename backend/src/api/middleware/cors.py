@@ -5,10 +5,10 @@ from typing import List
 
 from fastapi.middleware.cors import CORSMiddleware
 
-# Frontend origin from environment or default to localhost:3000
+# Allowed origins (comma-separated in environment)
+# Supports both ALLOWED_ORIGINS and legacy FRONTEND_ORIGIN/ADDITIONAL_ORIGINS
+ALLOWED_ORIGINS_ENV = os.getenv("ALLOWED_ORIGINS", "")
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
-
-# Additional allowed origins (comma-separated in environment)
 ADDITIONAL_ORIGINS = os.getenv("ADDITIONAL_ORIGINS", "")
 
 
@@ -23,12 +23,17 @@ def get_cors_middleware_config() -> dict:
         app.add_middleware(CORSMiddleware, **get_cors_middleware_config())
     """
     # Build list of allowed origins
-    allowed_origins: List[str] = [FRONTEND_ORIGIN]
+    allowed_origins: List[str] = []
 
-    # Add additional origins if specified
-    if ADDITIONAL_ORIGINS:
-        additional = [origin.strip() for origin in ADDITIONAL_ORIGINS.split(",") if origin.strip()]
-        allowed_origins.extend(additional)
+    # Priority 1: Use ALLOWED_ORIGINS if set
+    if ALLOWED_ORIGINS_ENV:
+        allowed_origins = [origin.strip() for origin in ALLOWED_ORIGINS_ENV.split(",") if origin.strip()]
+    else:
+        # Fallback: Use FRONTEND_ORIGIN and ADDITIONAL_ORIGINS (legacy)
+        allowed_origins = [FRONTEND_ORIGIN]
+        if ADDITIONAL_ORIGINS:
+            additional = [origin.strip() for origin in ADDITIONAL_ORIGINS.split(",") if origin.strip()]
+            allowed_origins.extend(additional)
 
     return {
         "allow_origins": allowed_origins,
