@@ -1,55 +1,364 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Todo AI Chatbot Constitution
+
+<!--
+Sync Impact Report:
+- Version change: INITIAL → 1.0.0
+- New constitution created from scratch
+- Principles established:
+  1. MCP-Only Tool Interface
+  2. Stateless Backend Architecture
+  3. Persistent Conversation Memory
+  4. Agent-Driven Implementation
+  5. Database Isolation
+  6. Friendly Error Handling
+  7. API-First Design
+  8. Test-First Development
+- Templates requiring updates:
+  ✅ plan-template.md - Constitution Check section will reference these principles
+  ✅ spec-template.md - Requirements align with MCP/stateless/agent principles
+  ✅ tasks-template.md - Task organization supports agent-driven workflow
+- Follow-up TODOs: None
+-->
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. MCP-Only Tool Interface
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Rule**: The AI agent MUST interact with the system ONLY through Model Context Protocol (MCP) tools. Direct database access, file system manipulation, or any other non-MCP interaction is strictly PROHIBITED.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: MCP provides a standardized, auditable, and testable interface layer. This ensures all AI actions are logged, reversible, and debuggable. It prevents the agent from creating unpredictable side effects and maintains clear boundaries between AI reasoning and system state changes.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Requirements**:
+- All todo operations (add, list, complete, update, delete) MUST be exposed as MCP tools
+- Tools MUST accept structured inputs and return structured outputs
+- Tool calls MUST be logged and included in API responses
+- No database queries, file I/O, or state mutations outside MCP tools
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Stateless Backend Architecture
 
-### [PRINCIPLE_6_NAME]
+**Rule**: The FastAPI backend MUST be completely stateless. No conversation context, user sessions, or task state may be held in memory between requests. All state MUST reside in PostgreSQL.
 
+**Rationale**: Statelessness enables horizontal scaling, simplifies debugging, and prevents state corruption. It ensures any server instance can handle any request without requiring sticky sessions or distributed caching. This is critical for production reliability and cost-effective scaling.
 
-[PRINCIPLE__DESCRIPTION]
+**Requirements**:
+- Backend MUST NOT store conversation history in memory
+- Backend MUST NOT maintain user session state beyond authentication tokens
+- Every request MUST fetch required context from database
+- Server restarts MUST NOT affect system behavior
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### III. Persistent Conversation Memory
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+**Rule**: Every user message and assistant response MUST be persisted to PostgreSQL before being returned to the client. The full conversation history MUST be fetched from the database for each request to provide context to the agent.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Persistent conversation history enables audit trails, debugging, analytics, and seamless multi-device experiences. It ensures no user input is lost and allows the agent to maintain context across sessions and server restarts.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Requirements**:
+- Store user messages BEFORE sending to agent
+- Store assistant responses BEFORE returning to client
+- Fetch complete conversation thread for each request
+- Include message metadata (timestamp, role, tool_calls, tool_results)
+- Implement conversation thread management per user
+
+### IV. Agent-Driven Implementation
+
+**Rule**: ALL code, documentation, tests, and configuration MUST be generated by Claude Code. Manual coding by humans is PROHIBITED. Humans provide requirements and approval; Claude generates all implementation artifacts.
+
+**Rationale**: This ensures consistency, adherence to architectural principles, and captures institutional knowledge in the generation process rather than in individual developers' minds. It creates a reproducible, auditable development workflow.
+
+**Requirements**:
+- Use `/sp.specify` to create specifications from natural language
+- Use `/sp.plan` to generate architectural designs
+- Use `/sp.tasks` to break down implementation into discrete tasks
+- Use `/sp.implement` to execute the implementation
+- Human role is limited to: requirements input, clarification, and approval
+
+### V. Database Isolation
+
+**Rule**: The AI agent MUST NEVER access the database directly. All database operations MUST be encapsulated within MCP tool implementations. The agent sees only tool interfaces, not database schemas or queries.
+
+**Rationale**: This enforces separation of concerns, prevents SQL injection risks via agent prompts, and ensures database access patterns remain controlled and optimized. It allows database schema changes without retraining the agent.
+
+**Requirements**:
+- MCP tools MUST encapsulate ALL database operations
+- Agent MUST NOT receive database connection strings or credentials
+- Database schema MUST be hidden from agent context
+- Tools MUST validate and sanitize all inputs before database queries
+
+### VI. Friendly Error Handling
+
+**Rule**: Every user action MUST result in a friendly, human-readable confirmation or error message. Errors MUST be gracefully handled and explained in natural language. Tool failures MUST NOT crash the system.
+
+**Rationale**: User experience depends on clear feedback. Technical errors are confusing and frustrating. The agent must translate all system states into conversational responses that build trust and guide the user.
+
+**Requirements**:
+- Successful operations MUST return confirmation messages (e.g., "✓ Added task: Buy groceries")
+- Errors MUST be caught and converted to natural language explanations
+- Agent MUST acknowledge tool call results in its response
+- System MUST log errors internally while showing friendly messages to users
+- No raw stack traces or technical jargon in user-facing responses
+
+### VII. API-First Design
+
+**Rule**: All functionality MUST be exposed through well-defined REST API endpoints. The frontend (ChatKit) MUST interact exclusively via the API. The API MUST be the single source of truth for system capabilities.
+
+**Rationale**: API-first design enables multiple client types (web, mobile, CLI), simplifies testing, and creates clear contracts between frontend and backend. It allows independent evolution of UI and business logic.
+
+**Requirements**:
+- Define API contracts BEFORE implementation
+- Document endpoints with OpenAPI/Swagger
+- Version API endpoints appropriately
+- Return consistent JSON response structures
+- Include proper HTTP status codes
+- Log all requests and responses for debugging
+
+### VIII. Test-First Development
+
+**Rule**: For any feature requiring tests, tests MUST be written FIRST, MUST FAIL initially, then implementation proceeds to make them pass (Red-Green-Refactor). Tests are OPTIONAL but when included they are NON-NEGOTIABLE in ordering.
+
+**Rationale**: Test-first ensures testability, clarifies requirements, and prevents over-engineering. Failing tests prove the tests actually validate the feature. This discipline catches regression bugs early.
+
+**Requirements**:
+- When tests are required: Write test → Verify it fails → Implement → Verify it passes
+- Contract tests for MCP tool interfaces
+- Integration tests for API endpoints
+- Agent behavior tests for conversation flows
+- Database tests for data integrity
+- Tests MUST be runnable in isolation
+
+## Architecture Constraints
+
+### Technology Stack (NON-NEGOTIABLE)
+
+**Backend**:
+- **Framework**: FastAPI (latest stable)
+- **ORM**: SQLModel (for Pydantic + SQLAlchemy integration)
+- **Database**: Neon Serverless PostgreSQL
+- **Agent SDK**: OpenAI Agents SDK
+- **MCP**: Official Model Context Protocol SDK
+
+**Frontend**:
+- **Framework**: ChatKit (chat UI library)
+- **Authentication**: Better Auth
+
+**Why These Choices**:
+- FastAPI: Modern async Python, excellent OpenAPI support, high performance
+- SQLModel: Type-safe database models that integrate with Pydantic validation
+- Neon: Serverless PostgreSQL with auto-scaling and connection pooling
+- OpenAI Agents SDK: Purpose-built for agentic workflows with tool calling
+- MCP SDK: Standard protocol for AI tool integration
+- ChatKit: Pre-built chat interface components
+- Better Auth: Modern, developer-friendly authentication
+
+### MCP Tool Specification
+
+**Required Tools** (all stateless, database-backed):
+- `add_task(title: str, description: str = "") -> TaskResponse`
+- `list_tasks(status: str = "all") -> List[TaskResponse]`
+- `complete_task(task_id: int) -> TaskResponse`
+- `update_task(task_id: int, title: str = None, description: str = None) -> TaskResponse`
+- `delete_task(task_id: int) -> ConfirmationResponse`
+
+**Tool Response Format**:
+```json
+{
+  "success": true,
+  "data": { /* tool-specific payload */ },
+  "message": "Friendly confirmation message"
+}
+```
+
+### API Design Standards
+
+**Endpoint Structure**:
+- `POST /api/chat` - Main chat endpoint (stateless)
+  - Input: `{ user_id: str, message: str }`
+  - Output: `{ response: str, tool_calls: List[ToolCall], conversation_id: str }`
+- `GET /api/conversations/{user_id}` - Fetch conversation history
+- `POST /api/auth/login` - Authentication
+- `POST /api/auth/register` - User registration
+
+**Response Format**:
+```json
+{
+  "status": "success" | "error",
+  "data": { /* endpoint-specific data */ },
+  "message": "Human-readable message",
+  "metadata": { "timestamp": "ISO8601", "request_id": "uuid" }
+}
+```
+
+### Database Schema Requirements
+
+**Minimum Tables**:
+- `users` - User accounts (Better Auth managed)
+- `conversations` - Conversation threads (user_id, created_at, updated_at)
+- `messages` - Message history (conversation_id, role, content, tool_calls, timestamp)
+- `tasks` - Todo items (user_id, title, description, status, created_at, completed_at)
+
+**Constraints**:
+- All tables MUST have primary keys
+- Foreign keys MUST enforce referential integrity
+- Timestamps MUST use UTC
+- Soft deletes preferred over hard deletes for audit trail
+
+## Development Workflow
+
+### Spec-Driven Development Process
+
+**Step 1: Specification** (`/sp.specify`)
+- Translate natural language requirements into structured spec
+- Define user stories with priorities (P1, P2, P3)
+- Establish acceptance criteria
+- Clarify ambiguities with user
+
+**Step 2: Planning** (`/sp.plan`)
+- Research technical approach
+- Define data models
+- Design API contracts
+- Document architecture decisions
+- Pass constitution compliance checks
+
+**Step 3: Task Breakdown** (`/sp.tasks`)
+- Convert plan into discrete, testable tasks
+- Order by dependencies
+- Mark parallel opportunities
+- Group by user story for independent delivery
+
+**Step 4: Implementation** (`/sp.implement`)
+- Execute tasks in dependency order
+- Run tests (if included) before implementation
+- Commit after each task or logical group
+- Document as you build
+
+**Step 5: Review & Iterate**
+- Validate against acceptance criteria
+- Test user stories independently
+- Create PHRs (Prompt History Records)
+- Suggest ADRs for architectural decisions
+
+### Constitution Compliance Gates
+
+All plans MUST pass these checks before proceeding to implementation:
+
+**Gate 1: MCP Compliance**
+- ✓ All agent interactions use MCP tools only
+- ✓ No direct database access in agent code
+- ✓ Tool interfaces clearly defined
+
+**Gate 2: Stateless Architecture**
+- ✓ Backend holds no conversation or session state
+- ✓ All state persisted to database
+- ✓ Requests fetch required context from storage
+
+**Gate 3: Conversation Persistence**
+- ✓ Messages stored before processing/returning
+- ✓ Full history fetched per request
+- ✓ Metadata captured for debugging
+
+**Gate 4: Database Isolation**
+- ✓ Agent code contains no SQL or database imports
+- ✓ Tools encapsulate all database logic
+- ✓ Schema hidden from agent context
+
+**Gate 5: Error Handling**
+- ✓ User-facing messages are friendly and clear
+- ✓ Technical errors logged but not exposed
+- ✓ Tool failures handled gracefully
+
+**Gate 6: Testing Discipline** (when tests required)
+- ✓ Tests written before implementation
+- ✓ Tests fail initially
+- ✓ Tests pass after implementation
+
+**Complexity Justification**: Any violation of these gates MUST be justified in the plan's Complexity Tracking section with clear rationale for why simpler alternatives are insufficient.
+
+### Quality Standards
+
+**Code Quality**:
+- Type hints required for all Python functions
+- Pydantic models for all data validation
+- Async/await for all I/O operations
+- Error handling on all external calls (DB, API, MCP)
+
+**Testing Standards** (when tests included):
+- Minimum 80% code coverage for business logic
+- Integration tests for all API endpoints
+- Contract tests for all MCP tools
+- Agent behavior tests for key conversation flows
+
+**Documentation Standards**:
+- API documented with OpenAPI/Swagger
+- MCP tools documented with JSON schemas
+- README with quickstart instructions
+- Architecture Decision Records for significant choices
+
+**Security Standards**:
+- No credentials in code or version control
+- Environment variables for all secrets
+- SQL injection prevention via parameterized queries
+- Input validation on all user-provided data
+- Authentication required for all protected endpoints
+- Rate limiting on public endpoints
+
+### Deliverables Checklist
+
+**Phase III: Todo AI Chatbot** MUST deliver:
+
+- ✓ **Frontend**: ChatKit-based chat interface with Better Auth integration
+- ✓ **Backend**: FastAPI server with stateless chat endpoint
+- ✓ **MCP Server**: Tool implementations for all todo operations
+- ✓ **Database**: PostgreSQL schema with migrations
+- ✓ **Specs**: Complete feature specification in `/specs/`
+- ✓ **Plan**: Architecture documentation in `/specs/*/plan.md`
+- ✓ **Tasks**: Implementation breakdown in `/specs/*/tasks.md`
+- ✓ **Tests**: Contract and integration tests (if specified in requirements)
+- ✓ **Documentation**: API docs, quickstart guide, deployment instructions
+- ✓ **Environment**: `.env.example` with required variables
+- ✓ **README**: Project overview, setup, and usage instructions
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Process
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+This constitution is the supreme document governing this project. All code, tests, documentation, and processes MUST comply.
+
+**To Amend**:
+1. Identify the principle or section requiring change
+2. Document the rationale and impact in an ADR
+3. Update this constitution file
+4. Increment version following semantic versioning
+5. Update all dependent templates (plan, spec, tasks)
+6. Create a Prompt History Record documenting the change
+7. Communicate changes to all stakeholders
+
+**Version Policy**:
+- **MAJOR** (X.0.0): Backward-incompatible principle changes or removals
+- **MINOR** (0.X.0): New principles or material expansions
+- **PATCH** (0.0.X): Clarifications, wording fixes, non-semantic updates
+
+### Compliance Review
+
+**Every PR/commit MUST**:
+- Pass all constitution compliance gates
+- Document any complexity tradeoffs
+- Include tests if feature requires testing
+- Update relevant documentation
+
+**Violations**:
+- Any violation MUST be explicitly justified in plan.md Complexity Tracking
+- Unjustified violations block implementation
+- Repeated violations trigger architecture review
+
+### Runtime Guidance
+
+For day-to-day development guidance, see `CLAUDE.md`. This file contains agent-specific instructions for Claude Code integration, PHR creation, ADR suggestions, and execution workflows.
+
+**Hierarchy**:
+1. Constitution (this file) - Immutable principles
+2. CLAUDE.md - Agent execution guidance
+3. Templates - Structured artifacts
+4. ADRs - Specific technical decisions
+
+---
+
+**Version**: 1.0.0 | **Ratified**: 2025-12-28 | **Last Amended**: 2025-12-28
