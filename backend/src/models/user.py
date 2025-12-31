@@ -1,4 +1,4 @@
-"""User model - managed by Better Auth."""
+"""User model with secure authentication."""
 
 from datetime import datetime
 from typing import Optional
@@ -8,16 +8,17 @@ from sqlmodel import Field, SQLModel
 
 
 class User(SQLModel, table=True):
-    """User entity managed by Better Auth.
+    """User entity with email/password authentication.
 
-    This table is read-only for our application.
-    Better Auth handles all user management operations.
+    Passwords are stored using bcrypt hashing for security.
     """
 
     __tablename__ = "users"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     email: str = Field(unique=True, index=True, max_length=255)
+    name: Optional[str] = Field(default=None, max_length=255)
+    hashed_password: str = Field(max_length=255)  # bcrypt hashed password
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:

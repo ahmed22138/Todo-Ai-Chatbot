@@ -1,28 +1,102 @@
 /**
- * Simple authentication service for development.
- * In production, this should be replaced with Better Auth integration.
+ * Authentication service with secure backend integration.
  */
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+export interface SignupRequest {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user_id: string;
+  email: string;
+  name?: string;
+}
 
 /**
- * Create a test user and get a JWT token.
- * For development purposes only.
+ * Sign up a new user.
+ */
+export async function signup(request: SignupRequest): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Signup failed');
+  }
+
+  const data: AuthResponse = await response.json();
+
+  // Store auth data
+  localStorage.setItem('auth_token', data.access_token);
+  localStorage.setItem('user_id', data.user_id);
+
+  return data;
+}
+
+/**
+ * Login an existing user.
+ */
+export async function login(request: LoginRequest): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Login failed');
+  }
+
+  const data: AuthResponse = await response.json();
+
+  // Store auth data
+  localStorage.setItem('auth_token', data.access_token);
+  localStorage.setItem('user_id', data.user_id);
+
+  return data;
+}
+
+/**
+ * Create a test user and get a JWT token (for quick demo).
+ * For development/demo purposes only.
  */
 export async function devLogin(): Promise<string> {
-  // For development, we'll create a simple mock token
-  // In a real app, this would call the Better Auth login endpoint
+  // Generate random credentials for demo mode
+  const randomEmail = `demo-${Date.now()}@example.com`;
+  const randomPassword = `demo${Date.now()}`;
 
-  // Generate a test user ID
-  const testUserId = localStorage.getItem('test_user_id') || crypto.randomUUID();
-  localStorage.setItem('test_user_id', testUserId);
+  try {
+    // Try to signup with random credentials
+    const response = await signup({
+      email: randomEmail,
+      password: randomPassword,
+      name: 'Demo User',
+    });
 
-  // Create a mock JWT token (this is for development only)
-  // The backend middleware will need to be updated to handle this or accept a test mode
-  const mockToken = `dev-token-${testUserId}`;
-
-  localStorage.setItem('auth_token', mockToken);
-  localStorage.setItem('user_id', testUserId);
-
-  return mockToken;
+    return response.access_token;
+  } catch (error) {
+    console.error('Demo login failed:', error);
+    throw error;
+  }
 }
 
 /**

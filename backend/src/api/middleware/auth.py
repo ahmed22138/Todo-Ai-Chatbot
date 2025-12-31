@@ -37,6 +37,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     - / (root - for health checks)
     - /health
     - /api/health
+    - /api/auth/* (signup, login)
     - /docs
     - /redoc
     - /openapi.json
@@ -48,6 +49,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         """Process request and validate authentication."""
         # Skip auth for public paths
         if request.url.path in self.PUBLIC_PATHS:
+            return await call_next(request)
+
+        # Skip auth for /api/auth/* endpoints (signup, login)
+        if request.url.path.startswith("/api/auth/"):
             return await call_next(request)
 
         # Skip auth for OPTIONS requests (CORS preflight)

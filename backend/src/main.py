@@ -167,8 +167,9 @@ async def root():
 
 
 # Include routers
-from src.api.routes import chat, conversations
+from src.api.routes import auth, chat, conversations
 
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(conversations.router, prefix="/api/conversations", tags=["Conversations"])
 

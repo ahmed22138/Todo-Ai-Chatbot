@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { devLogin } from '../services/auth';
+import { devLogin, login, signup } from '../services/auth';
 import './Auth.css';
 
 interface AuthProps {
@@ -30,16 +30,23 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
     try {
       if (isLogin) {
-        // Login flow
-        await devLogin();
+        // Login flow - call real backend API
+        await login({
+          email: email,
+          password: password,
+        });
         await new Promise(resolve => setTimeout(resolve, 500));
         onLogin();
       } else {
-        // Signup flow - just show success message
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setSuccessMessage('Account created successfully! Please login.');
-        setIsLogin(true); // Switch to login tab
-        setPassword(''); // Clear password for security
+        // Signup flow - call real backend API
+        await signup({
+          email: email,
+          password: password,
+          name: name || undefined,
+        });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // After successful signup, redirect to chat
+        onLogin();
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
