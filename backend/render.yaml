@@ -9,7 +9,7 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
@@ -26,4 +26,4 @@ services:
       - key: OPENAI_MODEL
         value: gpt-4o-mini
       - key: ALLOWED_ORIGINS
-        value: http://localhost:5173,https://your-frontend.vercel.app  # Update with your Vercel URL
+        value: http://localhost:5173,http://localhost:3000,https://todo-ai-chatbot-six.vercel.app
