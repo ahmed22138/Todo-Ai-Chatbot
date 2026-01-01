@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from dotenv import load_dotenv
 from sqlalchemy import text
 
-from src.db.connection import async_engine
+from src.db.connection import engine
 
 # Load environment variables
 load_dotenv()
@@ -29,9 +29,9 @@ load_dotenv()
 
 async def add_password_auth_columns():
     """Add name and hashed_password columns to users table."""
-    print("🔧 Adding password authentication columns to users table...")
+    print("Adding password authentication columns to users table...")
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         # Check if columns already exist
         result = await conn.execute(
             text(
@@ -47,27 +47,27 @@ async def add_password_auth_columns():
 
         # Add name column if it doesn't exist
         if "name" not in existing_columns:
-            print("  ✓ Adding 'name' column...")
+            print("  Adding 'name' column...")
             await conn.execute(
                 text("ALTER TABLE users ADD COLUMN name VARCHAR(255)")
             )
         else:
-            print("  ℹ 'name' column already exists, skipping...")
+            print("  'name' column already exists, skipping...")
 
         # Add hashed_password column if it doesn't exist
         if "hashed_password" not in existing_columns:
-            print("  ✓ Adding 'hashed_password' column...")
+            print("  Adding 'hashed_password' column...")
             await conn.execute(
                 text(
                     "ALTER TABLE users ADD COLUMN hashed_password VARCHAR(255) DEFAULT ''"
                 )
             )
         else:
-            print("  ℹ 'hashed_password' column already exists, skipping...")
+            print("  'hashed_password' column already exists, skipping...")
 
-    print("✅ Migration completed successfully!")
+    print("Migration completed successfully!")
     print()
-    print("⚠️  IMPORTANT: Existing users will have empty passwords.")
+    print("IMPORTANT: Existing users will have empty passwords.")
     print("   They need to reset their passwords or create new accounts.")
 
 
@@ -76,10 +76,10 @@ async def main():
     try:
         await add_password_auth_columns()
     except Exception as e:
-        print(f"❌ Migration failed: {e}")
+        print(f"Migration failed: {e}")
         sys.exit(1)
     finally:
-        await async_engine.dispose()
+        await engine.dispose()
 
 
 if __name__ == "__main__":

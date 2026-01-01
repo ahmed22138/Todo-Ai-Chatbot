@@ -45,8 +45,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           name: name || undefined,
         });
         await new Promise(resolve => setTimeout(resolve, 500));
-        // After successful signup, redirect to chat
-        onLogin();
+        // After successful signup, show success message and switch to login
+        setSuccessMessage('Account created successfully! Please login with your credentials.');
+        setIsLogin(true); // Switch to login tab
+        setPassword(''); // Clear password for security
+        // Do NOT auto-login - user must manually login
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
